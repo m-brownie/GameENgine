@@ -1,6 +1,7 @@
 package renderEngine;
 
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,9 +23,11 @@ public class Loader {
 	private List<Integer> vaos = new ArrayList<Integer>();
 	private List<Integer> vbos = new ArrayList<Integer>();
 
-	public RawModel loadToVAO(float[] positions) {
+	public RawModel loadToVAO(float[] positions, int[] indices) {
 		// Create an empty VAO.
 		int vaoID = createVAO();
+		// Bind the indices buffer to the VAO.
+		bindIndicesBuffer(indices);
 		// Store the position data into an attribute list of the VAO. 
 		// Here, the attribute list at index 0.
 		storeDataInAttributeList(0, positions);
@@ -32,7 +35,7 @@ public class Loader {
 		unbindVAO();
 		
 		// Return the data (the informations about the VAO) as a RawModel.
-		return new RawModel(vaoID, positions.length/3);
+		return new RawModel(vaoID, indices.length);
 	}
 	
 	/**
@@ -91,6 +94,23 @@ public class Loader {
 	}
 	
 	/**
+	 * Load indices buffer and bind it to the VAO.
+	 * 
+	 * @param indices the indices to bind.
+	 */
+	private void bindIndicesBuffer(int[] indices) {
+		// Create an empty VBO.
+		int vboID = GL15.glGenBuffers();
+		vbos.add(vboID);
+		// Bind the VBO.
+		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vboID);
+		// Convert the data into a IntBuffer.
+		IntBuffer buffer = storeDataInIntBuffer(indices);
+		// Store the data (buffer) into the VBO.
+		GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, buffer, GL15.GL_STATIC_DRAW);
+	}
+	
+	/**
 	 * Convert a float array of data into a float buffer.
 	 * 
 	 * @param data : the data to convert.
@@ -100,6 +120,23 @@ public class Loader {
 		// Create an empty FloatBuffer.
 		FloatBuffer buffer = BufferUtils.createFloatBuffer(data.length);
 		// Put the data into the FloatBuffer
+		buffer.put(data);
+		// Finish the writting in the buffer.
+		buffer.flip();
+		
+		return buffer;
+	}
+	
+	/**
+	 * Convert an int array of data into a int buffer.
+	 * 
+	 * @param data : the data to convert.
+	 * @return the IntBuffer.
+	 */
+	private IntBuffer storeDataInIntBuffer(int[] data) {
+		// Create an empty IntBuffer.
+		IntBuffer buffer = BufferUtils.createIntBuffer(data.length);
+		// Put the data into the IntBuffer
 		buffer.put(data);
 		// Finish the writting in the buffer.
 		buffer.flip();
